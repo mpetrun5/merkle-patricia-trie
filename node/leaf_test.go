@@ -1,4 +1,4 @@
-package main
+package node
 
 import (
 	"fmt"
@@ -6,16 +6,17 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/mpetrun5/merkle-patrica-trie/nibble"
 	"github.com/stretchr/testify/require"
 )
 
 func printEachCalculationSteps(key, value []byte, isLeaf bool) map[string]string {
 	hexs := make(map[string]string)
-	hexs["key in nibbles"] = fmt.Sprintf("%x", FromBytes(key))
-	hexs["key in nibbles, and prefixed"] = fmt.Sprintf("%x", ToPrefixed(FromBytes(key), isLeaf))
+	hexs["key in nibbles"] = fmt.Sprintf("%x", nibble.FromBytes(key))
+	hexs["key in nibbles, and prefixed"] = fmt.Sprintf("%x", nibble.ToPrefixed(nibble.FromBytes(key), isLeaf))
 	hexs["key in nibbles, and prefixed, and convert back to buffer"] =
-		fmt.Sprintf("%x", ToBytes(ToPrefixed(FromBytes(key), isLeaf)))
-	beforeRLP := [][]byte{ToBytes(ToPrefixed(FromBytes(key), isLeaf)), value}
+		fmt.Sprintf("%x", nibble.ToBytes(nibble.ToPrefixed(nibble.FromBytes(key), isLeaf)))
+	beforeRLP := [][]byte{nibble.ToBytes(nibble.ToPrefixed(nibble.FromBytes(key), isLeaf)), value}
 	hexs["beforeRLP"] = fmt.Sprintf("%x", beforeRLP)
 	afterRLP, err := rlp.EncodeToBytes(beforeRLP)
 	if err != nil {
@@ -31,13 +32,13 @@ func TestLeafHash(t *testing.T) {
 	require.Equal(t, "76657262", fmt.Sprintf("%x", []byte("verb")))
 
 	// "buffer to nibbles
-	require.Equal(t, "0001000200030004", fmt.Sprintf("%x", FromBytes([]byte{1, 2, 3, 4})))
+	require.Equal(t, "0001000200030004", fmt.Sprintf("%x", nibble.FromBytes([]byte{1, 2, 3, 4})))
 
-	// ToPrefixed
-	require.Equal(t, "02000001000200030004", fmt.Sprintf("%x", ToPrefixed(FromBytes([]byte{1, 2, 3, 4}), true)))
+	// nibble.ToPrefixed
+	require.Equal(t, "02000001000200030004", fmt.Sprintf("%x", nibble.ToPrefixed(nibble.FromBytes([]byte{1, 2, 3, 4}), true)))
 
 	// ToBuffer
-	require.Equal(t, "2001020304", fmt.Sprintf("%x", ToBytes(ToPrefixed(FromBytes([]byte{1, 2, 3, 4}), true))))
+	require.Equal(t, "2001020304", fmt.Sprintf("%x", nibble.ToBytes(nibble.ToPrefixed(nibble.FromBytes([]byte{1, 2, 3, 4}), true))))
 
 	require.Equal(t, "636f696e", fmt.Sprintf("%x", []byte("coin")))
 }

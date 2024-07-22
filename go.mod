@@ -1,11 +1,10 @@
-module merkle-patrica-trie
+module github.com/mpetrun5/merkle-patrica-trie
 
 go 1.18
 
 require (
 	github.com/ethereum/go-ethereum v1.9.15
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
 )
 
 require (
@@ -22,6 +21,7 @@ require (
 	github.com/shirou/gopsutil v2.20.5-0.20200531151128-663af789c085+incompatible // indirect
 	github.com/steakknife/bloomfilter v0.0.0-20180922174646-6819c0d2a570 // indirect
 	github.com/steakknife/hamming v0.0.0-20180906055917-c99c65617cd3 // indirect
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/sys v0.0.0-20220615213510-4f61da869c0c // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 )

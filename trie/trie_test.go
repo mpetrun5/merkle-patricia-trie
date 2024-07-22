@@ -1,9 +1,13 @@
-package main
+package trie
 
 import (
 	"fmt"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/trie"
+	"github.com/mpetrun5/merkle-patrica-trie/nibble"
+	"github.com/mpetrun5/merkle-patrica-trie/node"
+	"github.com/mpetrun5/merkle-patrica-trie/proof"
 	"github.com/stretchr/testify/require"
 )
 
@@ -84,11 +88,11 @@ func TestPut2Pairs(t *testing.T) {
 	require.Equal(t, []byte("coin"), coin)
 
 	fmt.Printf("%T\n", trie.root)
-	ext, ok := trie.root.(*ExtensionNode)
+	ext, ok := trie.root.(*node.ExtensionNode)
 	require.True(t, ok)
-	branch, ok := ext.Next.(*BranchNode)
+	branch, ok := ext.Next.(*node.BranchNode)
 	require.True(t, ok)
-	leaf, ok := branch.Branches[0].(*LeafNode)
+	leaf, ok := branch.Branches[0].(*node.LeafNode)
 	require.True(t, ok)
 
 	hexEqual(t, "c37ec985b7a88c2c62beb268750efe657c36a585beb435eb9f43b839846682ce", leaf.Hash())
@@ -99,9 +103,9 @@ func TestPut2Pairs(t *testing.T) {
 
 func TestPut(t *testing.T) {
 	trie := NewTrie()
-	require.Equal(t, EmptyNodeHash, trie.Hash())
+	require.Equal(t, node.EmptyNodeHash, trie.Hash())
 	trie.Put([]byte{1, 2, 3, 4}, []byte("hello"))
-	ns := NewLeafNodeFromBytes([]byte{1, 2, 3, 4}, []byte("hello"))
+	ns := node.NewLeafNodeFromBytes([]byte{1, 2, 3, 4}, []byte("hello"))
 	require.Equal(t, ns.Hash(), trie.Hash())
 }
 
@@ -110,13 +114,13 @@ func TestPutLeafShorter(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 4}, []byte("hello"))
 	trie.Put([]byte{1, 2, 3}, []byte("world"))
 
-	leaf := NewLeafNodeFromNibbles([]Nibble{4}, []byte("hello"))
+	leaf := node.NewLeafNodeFromNibbles([]nibble.Nibble{4}, []byte("hello"))
 
-	branch := NewBranchNode()
-	branch.SetBranch(Nibble(0), leaf)
+	branch := node.NewBranchNode()
+	branch.SetBranch(nibble.Nibble(0), leaf)
 	branch.SetValue([]byte("world"))
 
-	ext := NewExtensionNode([]Nibble{0, 1, 0, 2, 0, 3}, branch)
+	ext := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0, 3}, branch)
 
 	require.Equal(t, ext.Hash(), trie.Hash())
 }
@@ -126,7 +130,7 @@ func TestPutLeafAllMatched(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 4}, []byte("hello"))
 	trie.Put([]byte{1, 2, 3, 4}, []byte("world"))
 
-	ns := NewLeafNodeFromBytes([]byte{1, 2, 3, 4}, []byte("world"))
+	ns := node.NewLeafNodeFromBytes([]byte{1, 2, 3, 4}, []byte("world"))
 	require.Equal(t, ns.Hash(), trie.Hash())
 }
 
@@ -135,13 +139,13 @@ func TestPutLeafMore(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 4}, []byte("hello"))
 	trie.Put([]byte{1, 2, 3, 4, 5, 6}, []byte("world"))
 
-	leaf := NewLeafNodeFromNibbles([]Nibble{5, 0, 6}, []byte("world"))
+	leaf := node.NewLeafNodeFromNibbles([]nibble.Nibble{5, 0, 6}, []byte("world"))
 
-	branch := NewBranchNode()
+	branch := node.NewBranchNode()
 	branch.SetValue([]byte("hello"))
-	branch.SetBranch(Nibble(0), leaf)
+	branch.SetBranch(nibble.Nibble(0), leaf)
 
-	ext := NewExtensionNode([]Nibble{0, 1, 0, 2, 0, 3, 0, 4}, branch)
+	ext := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0, 3, 0, 4}, branch)
 
 	require.Equal(t, ext.Hash(), trie.Hash())
 }
@@ -205,18 +209,18 @@ func TestPutExtensionShorterAllMatched(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 5}, []byte("hello2"))
 	trie.Put([]byte{1, 2, 3}, []byte("world"))
 
-	leaf1 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello1"))
-	leaf2 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello2"))
+	leaf1 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello1"))
+	leaf2 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello2"))
 
-	branch1 := NewBranchNode()
-	branch1.SetBranch(Nibble(4), leaf1)
-	branch1.SetBranch(Nibble(5), leaf2)
+	branch1 := node.NewBranchNode()
+	branch1.SetBranch(nibble.Nibble(4), leaf1)
+	branch1.SetBranch(nibble.Nibble(5), leaf2)
 
-	branch2 := NewBranchNode()
+	branch2 := node.NewBranchNode()
 	branch2.SetValue([]byte("world"))
-	branch2.SetBranch(Nibble(0), branch1)
+	branch2.SetBranch(nibble.Nibble(0), branch1)
 
-	ext := NewExtensionNode([]Nibble{0, 1, 0, 2, 0, 3}, branch2)
+	ext := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0, 3}, branch2)
 
 	require.Equal(t, ext.Hash(), trie.Hash())
 }
@@ -227,21 +231,21 @@ func TestPutExtensionShorterPartialMatched(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 5}, []byte("hello2"))
 	trie.Put([]byte{1, 2, 5}, []byte("world"))
 
-	leaf1 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello1"))
-	leaf2 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello2"))
+	leaf1 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello1"))
+	leaf2 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello2"))
 
-	branch1 := NewBranchNode()
-	branch1.SetBranch(Nibble(4), leaf1)
-	branch1.SetBranch(Nibble(5), leaf2)
+	branch1 := node.NewBranchNode()
+	branch1.SetBranch(nibble.Nibble(4), leaf1)
+	branch1.SetBranch(nibble.Nibble(5), leaf2)
 
-	ext1 := NewExtensionNode([]Nibble{0}, branch1)
+	ext1 := node.NewExtensionNode([]nibble.Nibble{0}, branch1)
 
-	branch2 := NewBranchNode()
-	branch2.SetBranch(Nibble(3), ext1)
-	leaf3 := NewLeafNodeFromNibbles([]Nibble{}, []byte("world"))
-	branch2.SetBranch(Nibble(5), leaf3)
+	branch2 := node.NewBranchNode()
+	branch2.SetBranch(nibble.Nibble(3), ext1)
+	leaf3 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("world"))
+	branch2.SetBranch(nibble.Nibble(5), leaf3)
 
-	ext2 := NewExtensionNode([]Nibble{0, 1, 0, 2, 0}, branch2)
+	ext2 := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0}, branch2)
 
 	require.Equal(t, ext2.Hash(), trie.Hash())
 }
@@ -252,19 +256,19 @@ func TestPutExtensionShorterZeroMatched(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 5}, []byte("hello2"))
 	trie.Put([]byte{1 << 4, 2, 5}, []byte("world"))
 
-	leaf1 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello1"))
-	leaf2 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello2"))
+	leaf1 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello1"))
+	leaf2 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello2"))
 
-	branch1 := NewBranchNode()
-	branch1.SetBranch(Nibble(4), leaf1)
-	branch1.SetBranch(Nibble(5), leaf2)
+	branch1 := node.NewBranchNode()
+	branch1.SetBranch(nibble.Nibble(4), leaf1)
+	branch1.SetBranch(nibble.Nibble(5), leaf2)
 
-	ext1 := NewExtensionNode([]Nibble{1, 0, 2, 0, 3, 0}, branch1)
+	ext1 := node.NewExtensionNode([]nibble.Nibble{1, 0, 2, 0, 3, 0}, branch1)
 
-	branch2 := NewBranchNode()
-	branch2.SetBranch(Nibble(0), ext1)
-	leaf3 := NewLeafNodeFromNibbles([]Nibble{0, 0, 2, 0, 5}, []byte("world"))
-	branch2.SetBranch(Nibble(1), leaf3)
+	branch2 := node.NewBranchNode()
+	branch2.SetBranch(nibble.Nibble(0), ext1)
+	leaf3 := node.NewLeafNodeFromNibbles([]nibble.Nibble{0, 0, 2, 0, 5}, []byte("world"))
+	branch2.SetBranch(nibble.Nibble(1), leaf3)
 
 	require.Equal(t, branch2.Hash(), trie.Hash())
 }
@@ -275,15 +279,15 @@ func TestPutExtensionAllMatched(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 5 << 4}, []byte("hello2"))
 	trie.Put([]byte{1, 2, 3}, []byte("world"))
 
-	leaf1 := NewLeafNodeFromNibbles([]Nibble{4}, []byte("hello1"))
-	leaf2 := NewLeafNodeFromNibbles([]Nibble{0}, []byte("hello2"))
+	leaf1 := node.NewLeafNodeFromNibbles([]nibble.Nibble{4}, []byte("hello1"))
+	leaf2 := node.NewLeafNodeFromNibbles([]nibble.Nibble{0}, []byte("hello2"))
 
-	branch := NewBranchNode()
-	branch.SetBranch(Nibble(0), leaf1)
-	branch.SetBranch(Nibble(5), leaf2)
+	branch := node.NewBranchNode()
+	branch.SetBranch(nibble.Nibble(0), leaf1)
+	branch.SetBranch(nibble.Nibble(5), leaf2)
 	branch.SetValue([]byte("world"))
 
-	ext := NewExtensionNode([]Nibble{0, 1, 0, 2, 0, 3}, branch)
+	ext := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0, 3}, branch)
 
 	require.Equal(t, ext.Hash(), trie.Hash())
 }
@@ -294,16 +298,91 @@ func TestPutExtensionMore(t *testing.T) {
 	trie.Put([]byte{1, 2, 3, 5}, []byte("hello2"))
 	trie.Put([]byte{1, 2, 3, 6}, []byte("world"))
 
-	leaf1 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello1"))
-	leaf2 := NewLeafNodeFromNibbles([]Nibble{}, []byte("hello2"))
-	leaf3 := NewLeafNodeFromNibbles([]Nibble{}, []byte("world"))
+	leaf1 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello1"))
+	leaf2 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("hello2"))
+	leaf3 := node.NewLeafNodeFromNibbles([]nibble.Nibble{}, []byte("world"))
 
-	branch := NewBranchNode()
-	branch.SetBranch(Nibble(4), leaf1)
-	branch.SetBranch(Nibble(5), leaf2)
-	branch.SetBranch(Nibble(6), leaf3)
+	branch := node.NewBranchNode()
+	branch.SetBranch(nibble.Nibble(4), leaf1)
+	branch.SetBranch(nibble.Nibble(5), leaf2)
+	branch.SetBranch(nibble.Nibble(6), leaf3)
 
-	ext := NewExtensionNode([]Nibble{0, 1, 0, 2, 0, 3, 0}, branch)
+	ext := node.NewExtensionNode([]nibble.Nibble{0, 1, 0, 2, 0, 3, 0}, branch)
 
 	require.Equal(t, ext.Hash(), trie.Hash())
+}
+
+func TestEthProof(t *testing.T) {
+	mpt := new(trie.Trie)
+	mpt.Update([]byte{1, 2, 3}, []byte("hello"))
+	mpt.Update([]byte{1, 2, 3, 4, 5}, []byte("world"))
+	w := proof.NewProofDB()
+	err := mpt.Prove([]byte{1, 2, 3}, 0, w)
+	require.NoError(t, err)
+	rootHash := mpt.Hash()
+	val, err := trie.VerifyProof(rootHash, []byte{1, 2, 3}, w)
+	require.NoError(t, err)
+	require.Equal(t, []byte("hello"), val)
+	fmt.Printf("root hash: %x\n", rootHash)
+}
+
+func TestMyTrie(t *testing.T) {
+	tr := NewTrie()
+	tr.Put([]byte{1, 2, 3}, []byte("hello"))
+	tr.Put([]byte{1, 2, 3, 4, 5}, []byte("world"))
+	n0, ok := tr.root.(*node.ExtensionNode)
+	require.True(t, ok)
+	n1, ok := n0.Next.(*node.BranchNode)
+	require.True(t, ok)
+	fmt.Printf("n0 hash: %x, Serialized: %x\n", n0.Hash(), n0.Serialize())
+	fmt.Printf("n1 hash: %x, Serialized: %x\n", n1.Hash(), n1.Serialize())
+}
+
+func TestProveAndVerifyProof(t *testing.T) {
+	t.Run("should not generate proof for non-exist key", func(t *testing.T) {
+		tr := NewTrie()
+		tr.Put([]byte{1, 2, 3}, []byte("hello"))
+		tr.Put([]byte{1, 2, 3, 4, 5}, []byte("world"))
+		notExistKey := []byte{1, 2, 3, 4}
+		_, ok := tr.Prove(notExistKey)
+		require.False(t, ok)
+	})
+
+	t.Run("should generate a proof for an existing key, the proof can be verified with the merkle root hash", func(t *testing.T) {
+		tr := NewTrie()
+		tr.Put([]byte{1, 2, 3}, []byte("hello"))
+		tr.Put([]byte{1, 2, 3, 4, 5}, []byte("world"))
+
+		key := []byte{1, 2, 3}
+		proof, ok := tr.Prove(key)
+		require.True(t, ok)
+
+		rootHash := tr.Hash()
+
+		// verify the proof with the root hash, the key in question and its proof
+		val, err := VerifyProof(rootHash, key, proof)
+		require.NoError(t, err)
+
+		// when the verification has passed, it should return the correct value for the key
+		require.Equal(t, []byte("hello"), val)
+	})
+
+	t.Run("should fail the verification of the trie was updated", func(t *testing.T) {
+		tr := NewTrie()
+		tr.Put([]byte{1, 2, 3}, []byte("hello"))
+		tr.Put([]byte{1, 2, 3, 4, 5}, []byte("world"))
+
+		// the hash was taken before the trie was updated
+		rootHash := tr.Hash()
+
+		// the proof was generated after the trie was updated
+		tr.Put([]byte{5, 6, 7}, []byte("trie"))
+		key := []byte{1, 2, 3}
+		proof, ok := tr.Prove(key)
+		require.True(t, ok)
+
+		// should fail the verification since the merkle root hash doesn't match
+		_, err := VerifyProof(rootHash, key, proof)
+		require.Error(t, err)
+	})
 }

@@ -1,7 +1,8 @@
-package main
+package node
 
 import (
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/mpetrun5/merkle-patrica-trie/nibble"
 )
 
 type BranchNode struct {
@@ -19,11 +20,11 @@ func (b BranchNode) Hash() []byte {
 	return crypto.Keccak256(b.Serialize())
 }
 
-func (b *BranchNode) SetBranch(nibble Nibble, node Node) {
+func (b *BranchNode) SetBranch(nibble nibble.Nibble, node Node) {
 	b.Branches[int(nibble)] = node
 }
 
-func (b *BranchNode) RemoveBranch(nibble Nibble) {
+func (b *BranchNode) RemoveBranch(nibble nibble.Nibble) {
 	b.Branches[int(nibble)] = nil
 }
 
