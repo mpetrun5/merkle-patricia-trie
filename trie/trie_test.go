@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/mpetrun5/merkle-patrica-trie/nibble"
-	"github.com/mpetrun5/merkle-patrica-trie/node"
-	"github.com/mpetrun5/merkle-patrica-trie/proof"
+	"github.com/mpetrun5/merkle-patricia-trie/nibble"
+	"github.com/mpetrun5/merkle-patricia-trie/node"
+	"github.com/mpetrun5/merkle-patricia-trie/proof"
 	"github.com/stretchr/testify/require"
 )
 

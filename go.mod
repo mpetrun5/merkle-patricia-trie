@@ -1,4 +1,4 @@
-module github.com/mpetrun5/merkle-patrica-trie
+module github.com/mpetrun5/merkle-patricia-trie
 
 go 1.18
 

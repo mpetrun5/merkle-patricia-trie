@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/mpetrun5/merkle-patrica-trie/nibble"
+	"github.com/mpetrun5/merkle-patricia-trie/nibble"
 )
 
 type LeafNode struct {

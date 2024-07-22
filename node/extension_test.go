@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/mpetrun5/merkle-patrica-trie/nibble"
+	"github.com/mpetrun5/merkle-patricia-trie/nibble"
 	"github.com/stretchr/testify/require"
 )
 
